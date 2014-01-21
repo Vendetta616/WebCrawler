@@ -1,7 +1,11 @@
+import urllib2
+from BeautifulSoup import *
+from urlparse import urljoin
+
+ignorewrods = set(["the","of","to","and","a","in","is","it"])
+
 
 class crawler:
-
-	depth = 2
 
 	#init class as database name
 	def __init__(self,dbname):
@@ -19,11 +23,11 @@ class crawler:
 
 	#indexing each pages
 	def addtoindex(self,url,soup):
-		print("indexing %s",%url)
+		print("indexing ",url)
 
 	#Extraction text from HTML which has not tags
 	def gettextonly(self,soup):
-		return None
+		return ""
 
 	#separate words except white space
 	def saparatewords(self,text):
@@ -39,8 +43,31 @@ class crawler:
 
 	#accept pagelist,and crawling at giving depth by breadth first search
 	#then indexing pages
-	def cwawl(self,pages,depth):
-		pass
+	def crawl(self,pages,depth=2):
+		for i in range(depth):
+			newpages=set()
+			for page in pages:
+				try:
+					c = urllib2.urlopen(page)
+				except:
+					print("could not open ",page)
+					continue
+				soup = BeautifulSoup(c.read())
+				self.addtoindex(page,soup)
+
+			links = soup('a')
+			for link in links:
+				if("href" in dict(link.attrs)):
+					url = urljoin(page,link["href"])
+					if url.find("'")!=-1:continue
+					url = url.split("#")[0] #removing ankor
+					if url[0:4] == "http" and not self.isindexed(url):
+						newpages.add(url)
+					linkText=self.gettextonly(link)
+					self.addlinkref(page,url,linkText)
+
+				self.dbcommit()
+			pages = newpages
 
 	#creating database table
 	def createindextables(self):
