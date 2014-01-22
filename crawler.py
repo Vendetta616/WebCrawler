@@ -20,7 +20,13 @@ class crawler:
 
 	#Supporting method that getting entry ID or adding if its not exists 
 	def getentryid(self,table,field,value,createnew=True):
-		return None
+		cur = self.con.execute("select rowid from %s where %s='%s'" %(table,field,value))
+		res = cur.fetchone()
+		if res = None:
+			cur = self.con.execute("insert into %s (%s) values ('%s')" %(table,field,value))
+			return cur.lastrowid
+		else:
+			return res[0]
 
 	#indexing each pages
 	def addtoindex(self,url,soup):
