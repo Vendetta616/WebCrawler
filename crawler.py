@@ -41,7 +41,8 @@ class crawler:
 
 	#separate words except white space
 	def saparatewords(self,text):
-		return None
+		splitter = re.compile("¥¥W*")
+		return [s.lower() for s in splitter.split(text) if s!=""]
 
 	#retrun True if URLs is indexed 
 	def isindexed(self,rul):
