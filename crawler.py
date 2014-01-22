@@ -1,4 +1,5 @@
 import urllib2
+from pysqlite2 import dbapi2 as sqlite
 from BeautifulSoup import *
 from urlparse import urljoin
 
@@ -9,13 +10,13 @@ class crawler:
 
 	#init class as database name
 	def __init__(self,dbname):
-		pass
+		self.con = sqlite.connect(dbname)
 
 	def __del__(self):
-		pass
+		self.con.close()
 
 	def dbcommit(self):
-		pass
+		self.con.commit()
 
 	#Supporting method that getting entry ID or adding if its not exists 
 	def getentryid(self,table,field,value,createnew=True):
@@ -72,3 +73,21 @@ class crawler:
 	#creating database table
 	def createindextables(self):
 		pass
+
+	def createindextables(self):
+		self.con.execute("create table urllist(url)")
+		self.con.execute("create table wordlist(word)")
+		self.con.execute("create table wordlocation(urlid,wordid,location)")
+		self.con.execute("create table link(fromid integer,toid integer)")
+		self.con.execute("create table linkwords(wordid,linkid)")
+		self.con.execute("create index wordidx on wordlist(word)")
+		self.con.execute("create index urlidx on urllist(url)")
+		self.con.execute("create index wordurlidx on wordlocation(wordid)")
+		self.con.execute("create index urltoidx on link(toid)")
+		self.con.execute("create index urlformidx on link(fromid)")
+		self.dbcommit()
+
+
+
+
+
