@@ -1,3 +1,5 @@
+#coding:UTF-8
+
 import urllib2
 from pysqlite2 import dbapi2 as sqlite
 from BeautifulSoup import *
@@ -22,7 +24,7 @@ class crawler:
 	def getentryid(self,table,field,value,createnew=True):
 		cur = self.con.execute("select rowid from %s where %s='%s'" %(table,field,value))
 		res = cur.fetchone()
-		if res = None:
+		if res == None:
 			cur = self.con.execute("insert into %s (%s) values ('%s')" %(table,field,value))
 			return cur.lastrowid
 		else:
@@ -45,7 +47,7 @@ class crawler:
 			word = words[i]
 			if word in ignorewrods:continue
 			wordid = self.getentryid("wordlist","word",word)
-			self.con.execute("insert into wordlocation(urlid,wordid,location) ¥ values(%d,%d,%d)" %(urlid,wordid,i))
+			self.con.execute("insert into wordlocation(urlid,wordid,location) values(%d,%d,%d)" % (urlid,wordid,i))
 
 
 	#Extraction text from HTML which has not tags
@@ -68,7 +70,13 @@ class crawler:
 
 	#retrun True if URLs is indexed 
 	def isindexed(self,rul):
+		u = self.con.execute("select rowid from urllist where url='%s" % url).fetchone()
+		if u!=None:
+			#checking actually crawled URL
+			v=self.con.execute("select * from wordlocation where urlid=%d" % u[0]).fetchone()
+			if v!=None: return True
 		return False
+
 
 	#adding links between 2 pages
 	def addlinkref(self,urlFrom,urlTo,linkText):
