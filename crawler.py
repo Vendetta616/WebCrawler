@@ -28,7 +28,16 @@ class crawler:
 
 	#Extraction text from HTML which has not tags
 	def gettextonly(self,soup):
-		return ""
+		v = soup.string
+		if v==None:
+			c=soup.contents
+			resulttext=""
+			for t in c:
+				subtext=self.gettextonly(t)
+				resulttext+=subtext+"¥n"
+			return resulttext
+		else:
+			return v.strip()
 
 	#separate words except white space
 	def saparatewords(self,text):
