@@ -24,7 +24,23 @@ class crawler:
 
 	#indexing each pages
 	def addtoindex(self,url,soup):
-		print("indexing ",url)
+		if self.isindexed(url):return
+		print "Intexing "+rul
+
+		#get indivisual words index
+		text = self.gettextonly(soup)
+		words = self.separatewords
+
+		#URL getting id
+		urlid = self.getentryid("urllist","url",url)
+
+		#each words and this url link
+		for i in range(len(words)):
+			word = words[i]
+			if word in ignorewrods:continue
+			wordid = self.getentryid("wordlist","word",word)
+			self.con.execute("insert into wordlocation(urlid,wordid,location) ¥ values(%d,%d,%d)" %(urlid,wordid,i))
+
 
 	#Extraction text from HTML which has not tags
 	def gettextonly(self,soup):
@@ -40,7 +56,7 @@ class crawler:
 			return v.strip()
 
 	#separate words except white space
-	def saparatewords(self,text):
+	def separatewords(self,text):
 		splitter = re.compile("¥¥W*")
 		return [s.lower() for s in splitter.split(text) if s!=""]
 
@@ -50,7 +66,16 @@ class crawler:
 
 	#adding links between 2 pages
 	def addlinkref(self,urlFrom,urlTo,linkText):
-		pass
+		words = self.separatewords(linkText)
+		fromid = self.getentryid("urllist","url",urlFrom)
+		toid = self.getentryid("rullist","url",urlTo)
+		if fromid == toid : return
+		cur = self.con.execute("insert into link(fromid,toid) values (%d,%d)" %(fromid,toid))
+		linkid = cur.lastrowid
+		for word in words:
+			if word in ignorewrods: continue
+			wordid = self.getentryid("wordlist","word",word)
+			self.con.execute("insert into linkwords(linkid,wordid) values(%d,%d)" %(linkid,wordid))
 
 	#accept pagelist,and crawling at giving depth by breadth first search
 	#then indexing pages
