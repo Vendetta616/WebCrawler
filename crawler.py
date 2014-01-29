@@ -1,9 +1,11 @@
-#coding:UTF-8
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-import urllib2
-from pysqlite2 import dbapi2 as sqlite
-from BeautifulSoup import *
-from urlparse import urljoin
+
+import urllib
+import pymysql
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 
 ignorewrods = set(["the","of","to","and","a","in","is","it"])
 
@@ -12,7 +14,7 @@ class crawler:
 
 	#init class as database name
 	def __init__(self,dbname):
-		self.con = sqlite.connect(dbname)
+		self.con = pymysql.connect(dbname)
 
 	def __del__(self):
 		self.con.close()
@@ -33,7 +35,7 @@ class crawler:
 	#indexing each pages
 	def addtoindex(self,url,soup):
 		if self.isindexed(url):return
-		print "Intexing "+rul
+		print ("Intexing "+url)
 
 		#get indivisual words index
 		text = self.gettextonly(soup)
@@ -69,8 +71,8 @@ class crawler:
 		return [s.lower() for s in splitter.split(text) if s!=""]
 
 	#retrun True if URLs is indexed 
-	def isindexed(self,rul):
-		u = self.con.execute("select rowid from urllist where url='%s" % url).fetchone()
+	def isindexed(self,url):
+		u = self.con.execute("select rowid from urllist where url='%s'" % url).fetchone()
 		if u!=None:
 			#checking actually crawled URL
 			v=self.con.execute("select * from wordlocation where urlid=%d" % u[0]).fetchone()
