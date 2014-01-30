@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 
-import urllib
-import pymysql
+import urllib.request
+import sqlite3
+import re
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
@@ -14,7 +15,7 @@ class crawler:
 
 	#init class as database name
 	def __init__(self,dbname):
-		self.con = pymysql.connect(dbname)
+		self.con = sqlite3.connect(dbname)
 
 	def __del__(self):
 		self.con.close()
@@ -24,10 +25,12 @@ class crawler:
 
 	#Supporting method that getting entry ID or adding if its not exists 
 	def getentryid(self,table,field,value,createnew=True):
-		cur = self.con.execute("select rowid from %s where %s='%s'" %(table,field,value))
+
+		cur = self.con.execute("SELECT rowid FROM {} WHERE {} = (?) ".format(table,field),(value,)) 
 		res = cur.fetchone()
+
 		if res == None:
-			cur = self.con.execute("insert into %s (%s) values ('%s')" %(table,field,value))
+			cur = self.con.execute("insert into {} ({}) values (?)".format(table,field) ,(value,))
 			return cur.lastrowid
 		else:
 			return res[0]
@@ -39,7 +42,7 @@ class crawler:
 
 		#get indivisual words index
 		text = self.gettextonly(soup)
-		words = self.separatewords
+		words = self.separatewords(text)
 
 		#URL getting id
 		urlid = self.getentryid("urllist","url",url)
@@ -84,7 +87,7 @@ class crawler:
 	def addlinkref(self,urlFrom,urlTo,linkText):
 		words = self.separatewords(linkText)
 		fromid = self.getentryid("urllist","url",urlFrom)
-		toid = self.getentryid("rullist","url",urlTo)
+		toid = self.getentryid("urllist","url",urlTo)
 		if fromid == toid : return
 		cur = self.con.execute("insert into link(fromid,toid) values (%d,%d)" %(fromid,toid))
 		linkid = cur.lastrowid
@@ -100,23 +103,23 @@ class crawler:
 			newpages=set()
 			for page in pages:
 				try:
-					c = urllib2.urlopen(page)
+					response = urllib.request.urlopen(page)
 				except:
 					print("could not open ",page)
 					continue
-				soup = BeautifulSoup(c.read())
+				soup = BeautifulSoup(response.read())
 				self.addtoindex(page,soup)
 
-			links = soup('a')
-			for link in links:
-				if("href" in dict(link.attrs)):
-					url = urljoin(page,link["href"])
-					if url.find("'")!=-1:continue
-					url = url.split("#")[0] #removing ankor
-					if url[0:4] == "http" and not self.isindexed(url):
-						newpages.add(url)
-					linkText=self.gettextonly(link)
-					self.addlinkref(page,url,linkText)
+				links = soup('a')
+				for link in links:
+					if("href" in dict(link.attrs)):
+						url = urljoin(page,link["href"])
+						if url.find("'")!=-1:continue
+						url = url.split("#")[0] #removing ankor
+						if url[0:4] == "http" and not self.isindexed(url):
+							newpages.add(url)
+						linkText=self.gettextonly(link)
+						self.addlinkref(page,url,linkText)
 
 				self.dbcommit()
 			pages = newpages
