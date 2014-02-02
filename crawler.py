@@ -52,7 +52,7 @@ class crawler:
 			word = words[i]
 			if word in ignorewrods:continue
 			wordid = self.getentryid("wordlist","word",word)
-			self.con.execute("insert into wordlocation(urlid,wordid,location) values(%d,%d,%d)" % (urlid,wordid,i))
+			self.con.execute("insert into wordlocation(urlid,wordid,location) values({},{},{})".format(urlid,wordid,i) )
 
 
 	#Extraction text from HTML which has not tags
@@ -75,10 +75,10 @@ class crawler:
 
 	#retrun True if URLs is indexed 
 	def isindexed(self,url):
-		u = self.con.execute("select rowid from urllist where url='%s'" % url).fetchone()
+		u = self.con.execute("select rowid from urllist where url=(?)" , url).fetchone()
 		if u!=None:
 			#checking actually crawled URL
-			v=self.con.execute("select * from wordlocation where urlid=%d" % u[0]).fetchone()
+			v=self.con.execute("select * from wordlocation where urlid={}".format(u[0]) ).fetchone()
 			if v!=None: return True
 		return False
 
@@ -89,12 +89,12 @@ class crawler:
 		fromid = self.getentryid("urllist","url",urlFrom)
 		toid = self.getentryid("urllist","url",urlTo)
 		if fromid == toid : return
-		cur = self.con.execute("insert into link(fromid,toid) values (%d,%d)" %(fromid,toid))
+		cur = self.con.execute("insert into link(fromid,toid) values ({},{})".format(fromid,toid))
 		linkid = cur.lastrowid
 		for word in words:
 			if word in ignorewrods: continue
 			wordid = self.getentryid("wordlist","word",word)
-			self.con.execute("insert into linkwords(linkid,wordid) values(%d,%d)" %(linkid,wordid))
+			self.con.execute("insert into linkwords(linkid,wordid) values({},{})".format(linkid,wordid) )
 
 	#accept pagelist,and crawling at giving depth by breadth first search
 	#then indexing pages
