@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#coding: utf-8
 
 
 import urllib.request
@@ -161,7 +161,7 @@ class searcher:
 
 		for word in words:
 			wordrow = self.con.execute("select rowid from wordlist where word = (?) ",(word,)).fetchone()
-			print("wordwor:{}".format(wordrow))
+			
 			if wordrow != None:
 				wordid = wordrow[0]
 				wordids.append(wordid)
@@ -183,6 +183,27 @@ class searcher:
 
 		return rows,wordids
 
+	def getscoredlist(self,rows,wordids):
+		totalscores = dict([(row[0],0) for row in rows])
+
+		#Scorering function here
+		weights = []
+
+		for(weight,scores) in weights:
+			for url in totalscores:
+				totalscores[url]+= weight*scores[url]
+
+		return totalscores
+
+	def geturlname(self,id):
+		return self.con.execute("select url from urllist where rowid = (?)",(id,)).fetchone()[0]
+
+	def query(self,q):
+		rows,wordids = self.getmatchrows(q)
+		scores = self.getscoredlist(rows,wordids)
+		rankedscores = sorted([(score,url) for (url,score) in scores.items()],reverse = 1)
+		for (score,urlid) in rankedscores[0:10]:
+			print("{}:{}".format(score,self.geturlname(urlid)))
 
 
 

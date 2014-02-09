@@ -10,9 +10,8 @@ def doscript():
 def search():
 	import crawler
 	__search__clawler = crawler.searcher("searchindex.db")
-	e=__search__clawler.getmatchrows("functional programming")
+	__search__clawler.query("functional programming")
 
-	print(e)
 
 def __init__(self):
 	doscript()
