@@ -137,9 +137,8 @@ class crawler:
 		self.con.execute("create index urlidx on urllist(url)")
 		self.con.execute("create index wordurlidx on wordlocation(wordid)")
 		self.con.execute("create index urltoidx on link(toid)")
-		self.con.execute("create index urlformidx on link(fromid)")
-		self.dbcommit()
-
+		self.con.execute("create index urlformidx on ()link(fromid)")
+		self.dbcommit
 
 
 class searcher:
@@ -151,7 +150,7 @@ class searcher:
 
 	def getmatchrows(self,q):
 		#Strings to creating query
-		fieldlist="wo.urlid"
+		fieldlist="w0.urlid"
 		tablelist=""
 		clauselist=""
 		wordids=[]
@@ -161,21 +160,24 @@ class searcher:
 		tablenumber = 0
 
 		for word in words:
-			wordrow = self.con.execute("select rowid from wordlist where word = (?)",word).fetchone()
+			wordrow = self.con.execute("select rowid from wordlist where word = (?) ",(word,)).fetchone()
+			print("wordwor:{}".format(wordrow))
 			if wordrow != None:
 				wordid = wordrow[0]
 				wordids.append(wordid)
 				if tablenumber >0:
 					tablelist+=","
 					clauselist+=" and "
-					clauselist+="w{}.urlid={}.urlid and ".format(tablenumber-1,tablenumber)
-				fieldlist+=",{}.location".format(tablenumber)
-				tablelist+="wordlocation {} ".format(tablenumber)
-				clauselist+="{}.wordid = {}".format(tablenumber,wordid)
+					clauselist+="w{}.urlid=w{}.urlid and ".format(tablenumber-1,tablenumber)
+				fieldlist+=",w{}.location ".format(tablenumber)
+				tablelist+="wordlocation w{} ".format(tablenumber)
+				clauselist+="w{}.wordid = {} ".format(tablenumber,wordid)
 				tablenumber+=1
 
 		#create query by separated words
+
 		fullquery = "select {} from {} where {}".format(fieldlist,tablelist,clauselist)
+
 		cur = self.con.execute(fullquery)
 		rows = [row for row in cur]
 
