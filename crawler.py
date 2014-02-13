@@ -95,6 +95,35 @@ class crawler:
 			wordid = self.getentryid("wordlist","word",word)
 			self.con.execute("insert into linkwords(linkid,wordid) values({},{})".format(linkid,wordid) )
 
+	def calculatepagerank(self,iterations = 20):
+		#delete current pagerank table
+		self.con.execute("drop table if exists pagerank")
+		self.con.execute("create table pagerank(urlid primary key,score)")
+
+		#all urls initialize by 1
+		self.con.execute("insert into pagerank select rowid, 1.0 from urllist")
+		self.dbcommit()
+
+		for i in range(iterations):
+			print("Iteration {}".format(i))
+			for (urlid,) in self.con.execute("select rowid from urllist"):
+				pr = 0.15
+
+				#roop all pages which linked this page
+				for (linker,) in self.con.execute("select distinct fromid from link where toid = {}".format(urlid)):
+					#get linker's pagerank
+					linkingpr = self.con.execute("select score from pagerank where urlid = {}".format(linker)).fetchone()[0]
+					#get total link from linker
+					linkingcount = self.con.execute("select count(*) from link where fromid = {}".format(linker)).fetchone()[0]
+
+					pr+=0.85*(linkingpr/linkingcount)
+
+				self.con.execute("update pagerank set score ={} where urlid = {}".format(pr,urlid))
+
+				self.dbcommit
+
+
+
 	#accept pagelist,and crawling at giving depth by breadth first search
 	#then indexing pages
 	def crawl(self,pages,depth=2):
@@ -187,7 +216,7 @@ class searcher:
 		totalscores = dict([(row[0],0) for row in rows])
 
 		#Scorering function here
-		weights = []
+		weights = [(1.0,self.frequencyscore(rows))]
 
 		for(weight,scores) in weights:
 			for url in totalscores:
@@ -203,8 +232,44 @@ class searcher:
 		scores = self.getscoredlist(rows,wordids)
 		rankedscores = sorted([(score,url) for (url,score) in scores.items()],reverse = 1)
 		for (score,urlid) in rankedscores[0:10]:
-			print("{}:{}".format(score,self.geturlname(urlid)))
+			print('{:f}:{}'.format(score,self.geturlname(urlid)))
+
+	def normalizescores(self,scores,smallIsBetter=0):
+		#avoiding error that devived by zero
+		vsmall = 0.00001
+
+		if smallIsBetter:
+			ninscore = min(scores.values())
+			return dict([(u,float(minscore)/max(vsmall,l)) for (u,l) in scores.items()])
+
+		else:
+			maxscore=max(scores.values())
+			if maxscore ==0:
+				maxscore = vsmall
+			return dict([(u,float(c)/maxscore) for (u,c) in scores.items()])
 
 
+	def frequencyscore(self,rows):
+		counts = dict([(row[0],0) for row in rows])
+		for row in rows:
+			counts[row[0]]+=1
+		return self.normalizescores(counts)
 
+	def distancescore(self,rows):
+		#if given only 1 word ,everyone wins!
+		if len(rows[0]<=2): return dict([(row[0],0.1) for row in rows])
 
+		#initialize dictionaly by big number
+		mindistance = dict([(row[0],1000000) for row in rows])
+
+		for row in rows:
+			dist = sum([abs(row[i]-row[i-1])])
+			if dist<mindistance[row[0]]:
+				mindistance[row[0]] = dist
+
+		return self.normalizescores(mindistance,smallIsBetter=1)
+
+	def inboundlinkscore(self,rows):
+		uniqueurls = set([row[0] for row in rows ])
+		inboundcount = dict([(u,self.con.execute("select count(*) from link where  toid ={}".format(u)).fetchone()[0]) for u in uniqueruls])
+		return self.normalizescores(inboundcount)

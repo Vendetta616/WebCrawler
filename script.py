@@ -13,5 +13,10 @@ def search():
 	__search__clawler.query("functional programming")
 
 
+def calc():
+	import crawler
+	__doscript__crawler = crawler.crawler("searchindex.db")
+	__doscript__crawler.calculatepagerank()
+
 def __init__(self):
 	doscript()
