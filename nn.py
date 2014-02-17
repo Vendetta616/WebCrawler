@@ -62,7 +62,7 @@ class searchnet:
 				self.setstrength(hiddenid,urlid,1,0.1)
 			self.con.commit()
 
-	def gethiddenids(self,wordids,urlids):
+	def getallhiddenids(self,wordids,urlids):
 		l1 = {}
 		for wordid in wordids:
 			cur = self.con.execute("select toid from wordhidden where fromid = {}".format(wordid))
@@ -74,4 +74,17 @@ class searchnet:
 				l1[row[0]]=1
 		return l1.keys
 
-	
+	def setupnetwork(self,wordids,urlids):
+		#list of values
+		self.wordids = wordids
+		self.hiddenids = self.getallhiddenids(wordids,urlids)
+		self.urlids=urlids
+
+		#output nodes
+		self.ai = [1.0]*len(self.wordids)
+		self.ah = [1.0]*len(self.hiddenids)
+		self.ao = [1.0]*len(self.urlids)
+
+		#create weighting vector
+		self.wi = [[self.getstrength(wordid,hiddenid,0) for hiddenid in self.hiddenids] for wordid in self.wordids]
+		self.wo = [[self.getstrength(hiddenid,urlid,1) for urlid in self.urlids] for hiddenid in self.hiddenids]
