@@ -61,3 +61,17 @@ class searchnet:
 			for urlid in urls:
 				self.setstrength(hiddenid,urlid,1,0.1)
 			self.con.commit()
+
+	def gethiddenids(self,wordids,urlids):
+		l1 = {}
+		for wordid in wordids:
+			cur = self.con.execute("select toid from wordhidden where fromid = {}".format(wordid))
+			for row in cur:
+				l1[row[0]]=1
+		for urlid in urlids:
+			cur self.con.execute("select fromid from hiddenurl where toid ={}".format(urlid))
+			for row in cur:
+				l1[row[0]]=1
+		return l1.keys
+
+	
