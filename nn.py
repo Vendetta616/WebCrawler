@@ -69,10 +69,10 @@ class searchnet:
 			for row in cur:
 				l1[row[0]]=1
 		for urlid in urlids:
-			cur self.con.execute("select fromid from hiddenurl where toid ={}".format(urlid))
+			cur=self.con.execute("select fromid from hiddenurl where toid ={}".format(urlid))
 			for row in cur:
 				l1[row[0]]=1
-		return l1.keys
+		return l1.keys()
 
 	def setupnetwork(self,wordids,urlids):
 		#list of values
@@ -88,3 +88,27 @@ class searchnet:
 		#create weighting vector
 		self.wi = [[self.getstrength(wordid,hiddenid,0) for hiddenid in self.hiddenids] for wordid in self.wordids]
 		self.wo = [[self.getstrength(hiddenid,urlid,1) for urlid in self.urlids] for hiddenid in self.hiddenids]
+
+	def feedfoward(self):
+		#input query wordids
+		for i in range(len(self.wordids)):
+			self.ai[i]=1.0
+
+		#ignition of hiddenlayer
+		for j in range(len(self.hiddenids)):
+			sum = 0.0
+			for i in range(len(self.hiddenids)):
+				sum = sum+self.ai[i] * self.wi[i][j]
+			self.ah[j] = tanh(sum)
+
+		#ignition of output layer
+		for k in range(len(self.urlids)):
+			sum = 0.0
+			for j in range(len(self.hiddenids)):
+				sum = sum+self.ah[j] * self.wo[j][k]
+			self.ao[k] = tanh(sum)
+		return self.ao[:]
+
+	def getresult(self,wordids,urlids):
+		self.setupnetwork(wordids,urlids)
+		return self.feedfoward()
